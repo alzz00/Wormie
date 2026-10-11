@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Wormie">
+<meta name="theme-color" content="#0e1712">
+<title>Wormie</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="ikonlar/ikon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Titan+One&display=swap">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; }
+  body {
+    background: var(--zemin); color: var(--yazi);
+    font-family: var(--font); user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+    touch-action: none;
+  }
+  #arka { position: fixed; inset: 0; z-index: 0; }
+  .ekran { position: fixed; inset: 0; z-index: 1; display: none; flex-direction: column;
+    padding: calc(env(safe-area-inset-top) + 10px) 16px calc(env(safe-area-inset-bottom) + 14px); }
+  .ekran.acik { display: flex; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
+  svg { display: block; }
+
+  /* Üst çubuk */
+  .ust { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 48px; }
+  .hap { display: flex; align-items: center; gap: 7px; background: var(--kart); border: 2px solid var(--kenar);
+    border-radius: 999px; padding: 6px 13px 6px 8px; font-size: 18px; line-height: 1; box-shadow: var(--golge); }
+  .hap small { font-size: 12px; color: var(--soluk); }
+  .yuvarlak { width: 48px; height: 48px; border-radius: 50%; background: var(--kart); border: 2px solid var(--kenar);
+    display: grid; place-items: center; box-shadow: var(--golge); }
+  .yuvarlak:active, .buyuk:active, .guc:active { transform: translateY(3px); box-shadow: none; }
+
+  /* Ana ekran */
+  #ana .orta { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 0; }
+  /* Wormie logosu: "o" harfi turuncu çerçeveli bir solucan deliği */
+  .logo { font-family: 'Titan One', var(--font); font-weight: normal; font-size: clamp(56px, 18vw, 84px); line-height: 1;
+    text-align: center; margin: 0; color: #eaf6dc; text-shadow: 0 6px 0 rgba(0,0,0,.45); white-space: nowrap; }
+  .logo .delik { display: inline-block; position: relative; width: .8em; height: .8em; border-radius: .2em; margin: 0 .04em;
+    vertical-align: -.08em; background: #ff9a2e; box-shadow: 0 .08em 0 #9c5a12; }
+  .logo .delik::after { content: ''; position: absolute; inset: .15em; border-radius: 50%;
+    background: radial-gradient(circle at 50% 35%, #050906, #3a1d02); }
+  #vitrin { width: min(78vw, 330px); flex: 1; max-height: 46vh; min-height: 120px; }
+  .buyuk { background: var(--vurgu); color: var(--vurgu-yazi); border-radius: 22px; padding: 16px 30px;
+    font-size: 26px; min-width: 230px; box-shadow: var(--golge); display: flex; align-items: center; justify-content: center; gap: 12px;
+    border: 2px solid var(--kenar-buyuk, transparent); }
+  .buyuk small { display: block; font-size: 13px; opacity: .75; }
+
+  /* Oyun ekranı */
+  #oyun .ust .orta-yazi { flex: 1; text-align: center; font-size: 18px; color: var(--soluk); }
+  #sure { font-size: 22px; min-width: 96px; justify-content: center; font-variant-numeric: tabular-nums; }
+  #sure.az { color: #ff4d4d; animation: nabiz .6s infinite alternate; }
+  #sure.donuk { color: #59c8ff; }
+  @keyframes nabiz { to { transform: scale(1.08); } }
+  #sahne { flex: 1; width: 100%; min-height: 0; display: block; touch-action: none; }
+  .alt { display: flex; justify-content: center; gap: 18px; padding-top: 8px; }
+  .guc { position: relative; width: 70px; height: 70px; border-radius: 22px; background: var(--kart);
+    border: 2px solid var(--kenar); display: grid; place-items: center; box-shadow: var(--golge); }
+  .guc[disabled] { opacity: .35; }
+  .guc.secik { outline: 4px solid var(--vurgu); outline-offset: 2px; }
+  .guc b { position: absolute; right: -6px; top: -6px; min-width: 26px; height: 26px; border-radius: 13px; padding: 0 6px;
+    background: var(--vurgu); color: var(--vurgu-yazi); font-size: 15px; display: grid; place-items: center; font-weight: normal;
+    border: 2px solid var(--kenar); }
+  .guc b.fiyat { font-size: 12px; }
+  #ipucuYazi { position: absolute; left: 24px; right: 24px; bottom: calc(env(safe-area-inset-bottom) + 104px); display: flex; justify-content: center;
+    font-size: 15px; line-height: 1.3; text-align: center; pointer-events: none; opacity: 0; transition: opacity .25s; }
+  #ipucuYazi.acik { opacity: 1; }
+  #ipucuYazi span { background: var(--kart); border: 2px solid var(--kenar); border-radius: 14px; padding: 8px 14px; max-width: 300px; }
+
+  /* Pencere */
+  #perde { position: fixed; inset: 0; z-index: 5; background: rgba(0,0,0,.55); display: none; align-items: center; justify-content: center; padding: 24px; }
+  #perde.acik { display: flex; }
+  .pencere { background: var(--kart); border: 2px solid var(--kenar); border-radius: 28px; padding: 26px 22px 22px; width: min(340px, 100%);
+    text-align: center; box-shadow: var(--golge); animation: gel .28s cubic-bezier(.3,1.5,.6,1); }
+  @keyframes gel { from { transform: scale(.7); opacity: 0; } }
+  .pencere h2 { margin: 6px 0 4px; font-size: 34px; font-weight: normal; }
+  .pencere p { margin: 0 0 18px; color: var(--soluk); font-size: 16px; }
+  .pencere .ikon { display: grid; place-items: center; margin: 0 auto; }
+  .pencere .dugmeler { display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
+  .pencere .buyuk { min-width: 0; font-size: 22px; padding: 13px 20px; }
+  .ikinci { background: transparent; color: var(--yazi); border: 2px solid var(--kenar); border-radius: 18px; padding: 11px 16px; font-size: 18px; }
+  .odul { display: inline-flex; align-items: center; gap: 8px; font-size: 28px; margin: 4px 0 18px; }
+  .temalar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 6px 0 16px; }
+  .temalar button { border-radius: 16px; border: 3px solid transparent; padding: 0; overflow: hidden; height: 64px; }
+  .temalar button.secik { border-color: var(--vurgu); }
+  .satir { display: flex; justify-content: space-between; align-items: center; font-size: 18px; margin: 4px 0 16px; }
+  .anahtar { width: 56px; height: 32px; border-radius: 16px; background: var(--kenar); position: relative; }
+  .anahtar::after { content: ''; position: absolute; left: 4px; top: 4px; width: 24px; height: 24px; border-radius: 50%; background: var(--kart); transition: left .2s; }
+  .anahtar.acik { background: var(--vurgu); }
+  .anahtar.acik::after { left: 28px; }
+</style>
+</head>
+<body>
+<div id="arka"></div>
+
+<section id="ana" class="ekran">
+  <div class="ust">
+    <div class="hap" id="canHap"></div>
+    <div class="hap" id="jetonHap"></div>
+  </div>
+  <div class="orta">
+    <h1 class="logo" aria-label="Wormie">w<span class="delik"></span>rmie</h1>
+    <canvas id="vitrin"></canvas>
+    <button class="buyuk" id="oyna"></button>
+  </div>
+  <div class="ust" style="justify-content:flex-end">
+    <button class="yuvarlak" id="ayarBtn" aria-label="Ayarlar"></button>
+  </div>
+</section>
+
+<section id="oyun" class="ekran">
+  <div class="ust">
+    <button class="yuvarlak" id="geriBtn" aria-label="Ana ekran"></button>
+    <div class="orta-yazi" id="bolumYazi"></div>
+    <div class="hap" id="sure"></div>
+  </div>
+  <canvas id="sahne"></canvas>
+  <div class="alt">
+    <button class="guc" id="gucCekic" aria-label="Çekiç"></button>
+    <button class="guc" id="gucKaldir" aria-label="Kaldırıcı"></button>
+    <button class="guc" id="gucDondur" aria-label="Zamanı dondur"></button>
+  </div>
+  <div id="ipucuYazi"><span></span></div>
+</section>
+
+<div id="perde"><div class="pencere" id="pencere"></div></div>
+
+<script type="module" src="js/ana.js"></script>
+</body>
+</html>
